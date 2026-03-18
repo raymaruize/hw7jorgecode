@@ -106,8 +106,53 @@ def run_maze_preview(level_path: Optional[str], cell_size: int = 28) -> None:
     pygame.quit()
 
 
+def draw_game(surface: pygame.Surface, game: "Game", cell_size: int) -> None:
+    """
+    Draw current game state (walls, uneaten pellets, Pac-Man, and one ghost).
+    Keeps original visual style and reuses maze data.
+    """
+    maze = game.maze
+    rows = maze.get_rows()
+    cols = maze.get_cols()
+    grid = maze.get_grid()
+
+    # Walls/background
+    for row in range(rows):
+        for col in range(cols):
+            x = col * cell_size
+            y = row * cell_size
+            rect = pygame.Rect(x, y, cell_size, cell_size)
+
+            if grid[row][col] == "#":
+                pygame.draw.rect(surface, WALL_BORDER, rect)
+                inner = pygame.Rect(x + 1, y + 1, cell_size - 2, cell_size - 2)
+                pygame.draw.rect(surface, WALL, inner)
+
+    # Pellets (only uneaten)
+    for pellet in game.pellets.values():
+        if pellet.eaten:
+            continue
+        x = pellet.col * cell_size
+        y = pellet.row * cell_size
+        center = (x + cell_size // 2, y + cell_size // 2)
+        if pellet.pellet_type == "normal":
+            pygame.draw.circle(surface, PELLET, center, cell_size // 6)
+        else:
+            pygame.draw.circle(surface, POWER_PELLET, center, cell_size // 4)
+
+    # Pac-Man + ghost
+    px = game.pacman.col * cell_size + cell_size // 2
+    py = game.pacman.row * cell_size + cell_size // 2
+    pygame.draw.circle(surface, PACMAN_SPAWN, (px, py), cell_size // 3)
+
+    gx = game.ghost.col * cell_size + cell_size // 2
+    gy = game.ghost.row * cell_size + cell_size // 2
+    pygame.draw.circle(surface, GHOST_SPAWN, (gx, gy), cell_size // 3)
+
+
 # Avoid circular import at module load; Maze is only needed when drawing
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from src.game import Game
     from src.maze import Maze
